@@ -2,16 +2,27 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>COINS</title>
     
     <link rel="icon" href="https://cdn.phototourl.com/free/2026-08-11-c817fdef-e006-4871-909b-7f70b7675dff.png" type="image/png">
     
-    <link rel="manifest" href="manifest.json">
+    <!-- Cấu hình chuẩn cho App độc lập trên iOS và Android -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="COINS">
     <meta name="theme-color" content="#f0fdf4">
+    <link rel="apple-touch-icon" href="https://cdn.phototourl.com/free/2026-08-11-c817fdef-e006-4871-909b-7f70b7675dff.png">
+
+    <!-- Cấu hình hiển thị khung ảnh preview khi gửi link -->
+    <meta property="og:title" content="COINS - Sổ Quản Lý Chi Tiêu">
+    <meta property="og:description" content="Theo dõi thu chi cá nhân nhanh chóng, an toàn và tiện lợi.">
+    <meta property="og:image" content="https://cdn.phototourl.com/free/2026-08-11-c817fdef-e006-4871-909b-7f70b7675dff.png">
+    <meta property="og:type" content="website">
+
+    <!-- Manifest PWA Offline App -->
+    <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22COINS%22%2C%22short_name%22%3A%22COINS%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f0fdf4%22%2C%22theme_color%22%3A%22%23f0fdf4%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn.phototourl.com%2Ffree%2F2026-08-11-c817fdef-e006-4871-909b-7f70b7675dff.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -200,7 +211,7 @@
                             </tr>
                         </thead>
                         <tbody id="expenseTableBody">
-                            <tr><td colspan="3" style="text-align:center; opacity:0.6;">Đang tải dữ liệu...</td></tr>
+                            <tr><td colspan="3" style="text-align:center; opacity:0.6;">Chưa có dữ liệu</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -243,7 +254,6 @@
             <div id="reportContainer" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; overflow-y: auto; max-height: 250px;">
                 <!-- Dữ liệu các chu kỳ sẽ được render động vào đây -->
             </div>
-
             <p style="font-size: 12px; font-weight: 700; margin-bottom: 4px; opacity: 0.8;">Lịch sử các khoản đã bị xóa:</p>
             <div class="table-container" style="flex: 1; max-height: 150px; margin-bottom: 10px;">
                 <table>
@@ -263,14 +273,30 @@
             <button class="btn-chinh" onclick="closeBiWeeklyReportModal()" style="width: 100%;">Đóng</button>
         </div>
     </div>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, set, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <script>
+        const STORAGE_KEY = 'coins_standalone_clean_v1';
         
-        function triggerVibration() {
-            if ('vibrate' in navigator) {
-                navigator.vibrate(40);
+        function getStorageData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (!data) {
+                const initial = { balance: 0, expenses: [], deletedExpenses: [], password: "310309" };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+                return initial;
             }
+            return JSON.parse(data);
+        }
+
+        function saveStorageData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        let globalData = getStorageData();
+        let currentMode = ''; 
+        let currentPassword = globalData.password || "310309";
+        let isEditModeActive = false;
+
+        function triggerVibration() {
+            if ('vibrate' in navigator) navigator.vibrate(40);
         }
         
         window.handleMoneyInput = function(inputId, suggestionId) {
@@ -297,23 +323,6 @@
             const val = document.getElementById(inputId).value;
             return parseFloat(val.replace(/\./g, '').replace(' đ', '')) || 0;
         }
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyAcrniyvrvC1kvQSINdprgjZ-cjm5SMqM",
-            authDomain: "coins-a74d8.firebaseapp.com",
-            databaseURL: "https://coins-a74d8-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "coins-a74d8",
-            storageBucket: "coins-a74d8.firebasestorage.app",
-            messagingSenderId: "805726364508",
-            appId: "1:805726364508:web:39e6b9129d834efe2d9799"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const dbRef = ref(db, 'family_data');
-        let globalData = null;
-        let currentMode = ''; 
-        let currentPassword = "310309";
-        let isEditModeActive = false;
 
         window.addEventListener('load', () => {
             let bar = document.getElementById('loadingBar');
@@ -338,27 +347,8 @@
                 }, 300);
             }, 1000);
             
-            fetchInitialData();
+            updateUIWithData(globalData);
         });
-
-        async function fetchInitialData() {
-            try {
-                const snap = await get(dbRef);
-                if(snap.exists()) {
-                    globalData = snap.val();
-                    if(globalData.password) currentPassword = String(globalData.password);
-                    if(!globalData.deletedExpenses) {
-                        await update(dbRef, { deletedExpenses: [] });
-                        globalData.deletedExpenses = [];
-                    }
-                } else {
-                    await set(dbRef, { balance: 0, expenses: [], deletedExpenses: [], password: "310309" });
-                }
-            } catch(e) {
-                console.error("Lỗi kết nối Firebase:", e);
-                globalData = { balance: 0, expenses: [], deletedExpenses: [], password: "310309" };
-            }
-        }
 
         window.selectMode = function(mode) {
             triggerVibration();
@@ -380,15 +370,13 @@
                 btn.disabled = false;
             }
         }
-
         window.checkLoginPin = function() {
             if (currentMode !== 'edit') return;
             const pinVal = document.getElementById('loginPinBox').value.trim();
             const btn = document.getElementById('continueBtn');
             btn.disabled = (pinVal !== currentPassword);
         }
-
-        window.loginApp = async function() {
+        window.loginApp = function() {
             triggerVibration();
             const authScreen = document.getElementById('authScreen');
             const appScreen = document.getElementById('appScreen');
@@ -418,29 +406,16 @@
                     <button onclick="logoutApp()" style="color:#dc2626;">Đăng xuất</button>
                 `;
             }
-            if (globalData) {
-                updateUIWithData(globalData);
-            }
-            onValue(dbRef, (snap) => {
-                const data = snap.val();
-                if (data) {
-                    globalData = data;
-                    updateUIWithData(data);
-                }
-            });
+            updateUIWithData(globalData);
         };
 
-        // Mốc chuẩn chu kỳ tính từ ngày 09/08/2026 (tháng 8 là chỉ số 7)
         function getCurrentCycleRange() {
             const now = new Date();
             now.setHours(0, 0, 0, 0);
-
             let cycleStart = new Date(2026, 7, 9); 
             cycleStart.setHours(0, 0, 0, 0);
-
             let cycleEnd = new Date(cycleStart);
             cycleEnd.setDate(cycleEnd.getDate() + 14);
-
             if (now >= cycleEnd) {
                 while (now >= cycleEnd) {
                     cycleStart = new Date(cycleEnd);
@@ -457,9 +432,7 @@
 
         function updateUIWithData(data) {
             if (data.password) currentPassword = String(data.password);
-            
             const expenses = data.expenses || [];
-            
             const { cycleStart, cycleEnd } = getCurrentCycleRange();
             
             let spent = 0;
@@ -479,7 +452,6 @@
                     } catch(err) {}
                 }
             });
-
             const totalDeposit = expenses.filter(e => e.type === 'deposit').reduce((a, b) => a + b.price, 0);
             const totalSpentAll = expenses.filter(e => e.type === 'expense').reduce((a, b) => a + b.price, 0);
             const currentBal = totalDeposit - totalSpentAll;
@@ -503,7 +475,6 @@
             const menu = document.getElementById('dropdownMenu');
             menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
         };
-
         window.toggleEditMode = function(event) {
             event.stopPropagation();
             triggerVibration();
@@ -511,7 +482,6 @@
             renderTable();
             document.getElementById('dropdownMenu').style.display = 'none';
         };
-
         window.addEventListener('click', (e) => {
             const menu = document.getElementById('dropdownMenu');
             if(menu) menu.style.display = 'none';
@@ -586,26 +556,25 @@
             }).reverse().join('');
         }
 
-        window.deleteExpense = async function(event, index) {
+        window.deleteExpense = function(event, index) {
             event.stopPropagation(); 
             triggerVibration();
             if(confirm("Bạn có chắc muốn xóa giao dịch này không?")) {
-                const snap = await get(dbRef);
-                const data = snap.val() || {};
-                let exps = data.expenses || [];
+                let exps = globalData.expenses || [];
                 let removed = exps.splice(index, 1)[0];
                 if (!removed) return;
-                let newBalance = data.balance || 0;
+                let newBalance = globalData.balance || 0;
                 if(removed.type === 'deposit') newBalance -= removed.price;
-                let deletedExps = data.deletedExpenses || [];
+                let deletedExps = globalData.deletedExpenses || [];
                 const now = new Date();
                 const deleteTimeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} (${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')})`;
                 
                 deletedExps.push({ name: removed.name, price: removed.price, type: removed.type, deletedAt: deleteTimeStr });
-                await update(dbRef, { balance: newBalance, expenses: exps, deletedExpenses: deletedExps });
-                globalData.expenses = exps;
+                
                 globalData.balance = newBalance;
+                globalData.expenses = exps;
                 globalData.deletedExpenses = deletedExps;
+                saveStorageData(globalData);
                 updateUIWithData(globalData);
             }
         };
@@ -615,38 +584,43 @@
             location.reload();
         };
 
-        window.depositMoney = async function() {
+        window.depositMoney = function() {
             triggerVibration();
             const amt = getCleanNumber('depositAmount');
             if(amt > 0) {
                 const now = new Date();
                 const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} (${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')})`;
-                const snap = await get(dbRef);
-                const data = snap.val() || { balance: 0, expenses: [] };
-                const exps = data.expenses || [];
+                const exps = globalData.expenses || [];
                 exps.push({ name: 'Nạp tiền', price: amt, time: timeStr, type: 'deposit' });
-                await update(dbRef, { balance: (data.balance || 0) + amt, expenses: exps });
+                
+                globalData.balance = (globalData.balance || 0) + amt;
+                globalData.expenses = exps;
+                saveStorageData(globalData);
+                
                 document.getElementById('depositAmount').value = '';
                 document.getElementById('depositSuggestions').innerHTML = '';
+                updateUIWithData(globalData);
                 alert('Nạp tiền thành công!');
             }
         };
 
-        window.addExpense = async function() {
+        window.addExpense = function() {
             triggerVibration();
             const name = document.getElementById('productName').value.trim();
             const price = getCleanNumber('productPrice');
             if(name && price > 0) {
                 const now = new Date();
                 const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} (${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')})`;
-                const snap = await get(dbRef);
-                const data = snap.val() || { expenses: [] };
-                const exps = data.expenses || [];
+                const exps = globalData.expenses || [];
                 exps.push({ name, price, time: timeStr, type: 'expense' });
-                await update(dbRef, { expenses: exps });
+                
+                globalData.expenses = exps;
+                saveStorageData(globalData);
+                
                 document.getElementById('productName').value = '';
                 document.getElementById('productPrice').value = '';
                 document.getElementById('priceSuggestions').innerHTML = '';
+                updateUIWithData(globalData);
             }
         };
 
@@ -677,7 +651,7 @@
             triggerVibration();
             document.getElementById('changePasswordModal').classList.add('hidden');
         }
-        window.saveNewPassword = async function() {
+        window.saveNewPassword = function() {
             triggerVibration();
             const newPin = document.getElementById('newPinBox').value.trim();
             const confirmPin = document.getElementById('confirmPinBox').value.trim();
@@ -689,8 +663,9 @@
                 alert("Mã PIN xác nhận không khớp!");
                 return;
             }
-            await update(dbRef, { password: newPin });
+            globalData.password = newPin;
             currentPassword = newPin;
+            saveStorageData(globalData);
             alert("Đổi mật khẩu thành công!");
             closeChangePasswordModal();
         }
@@ -700,9 +675,7 @@
             if (currentMode === 'view') {
                 document.getElementById('secretPinBox').value = '';
                 document.getElementById('secretOwnerModal').classList.remove('hidden');
-                setTimeout(() => {
-                    document.getElementById('secretPinBox').focus();
-                }, 50);
+                setTimeout(() => document.getElementById('secretPinBox').focus(), 50);
             }
         }
         window.closeSecretModal = function() {
@@ -725,14 +698,11 @@
             const expenses = globalData ? (globalData.expenses || []).filter(e => e.type === 'expense') : [];
             const now = new Date();
             now.setHours(0, 0, 0, 0);
-
             const { cycleStart, cycleEnd } = getCurrentCycleRange();
             const midCycle = new Date(cycleStart);
             midCycle.setDate(midCycle.getDate() + 7);
-
             let week1Spent = 0;
             let week2Spent = 0;
-
             expenses.forEach(e => {
                 try {
                     const match = e.time.match(/\((\d{2})\/(\d{2})\)/);
@@ -748,7 +718,6 @@
                     }
                 } catch(err) {}
             });
-
             const totalBiWeekly = week1Spent + week2Spent;
             
             const formatDateStr = (dateObj) => {
@@ -756,11 +725,9 @@
                 const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
                 return `${dd}/${mm}`;
             };
-
             const adjustedCycleEnd = new Date(cycleEnd);
             adjustedCycleEnd.setDate(adjustedCycleEnd.getDate() - 1);
             const cycleTextStr = `${formatDateStr(cycleStart)} - ${formatDateStr(adjustedCycleEnd)}`;
-
             document.getElementById('biWeeklySummaryText').innerText = `${cycleTextStr}: ${totalBiWeekly.toLocaleString('vi-VN')} đ`;
             
             const reportContainer = document.getElementById('reportContainer');
@@ -775,51 +742,10 @@
                     <div style="font-size: 15px; font-weight: 800; color: #dc2626; margin-top: 2px;">${week2Spent.toLocaleString('vi-VN')} đ</div>
                 </div>
             `;
-
-            let pastCyclesData = {};
-            expenses.forEach(e => {
-                try {
-                    const match = e.time.match(/\((\d{2})\/(\d{2})\)/);
-                    if (!match) return;
-                    const d = parseInt(match[1]);
-                    const m = parseInt(match[2]) - 1;
-                    const itemDate = new Date(now.getFullYear(), m, d);
-                    
-                    if (itemDate < cycleStart) {
-                        let pStart = new Date(2026, 7, 9);
-                        pStart.setHours(0,0,0,0);
-                        let pEnd = new Date(pStart);
-                        pEnd.setDate(pEnd.getDate() + 14);
-                        
-                        while(itemDate >= pEnd) {
-                            pStart = new Date(pEnd);
-                            pEnd.setDate(pEnd.getDate() + 14);
-                        }
-                        
-                        let pEndAdjusted = new Date(pEnd);
-                        pEndAdjusted.setDate(pEndAdjusted.getDate() - 1);
-                        let keyStr = `${formatDateStr(pStart)} - ${formatDateStr(pEndAdjusted)}`;
-                        
-                        if (!pastCyclesData[keyStr]) pastCyclesData[keyStr] = 0;
-                        pastCyclesData[keyStr] += e.price;
-                    }
-                } catch(err) {}
-            });
-
-            for (const [rangeKey, totalVal] of Object.entries(pastCyclesData)) {
-                htmlContent += `
-                    <div style="background: #f8fafc; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color);">
-                        <div style="font-weight: 700; font-size: 13px; color: var(--text-color);">${rangeKey}:</div>
-                        <div style="font-size: 15px; font-weight: 800; color: #dc2626; margin-top: 2px;">${totalVal.toLocaleString('vi-VN')} đ</div>
-                    </div>
-                `;
-            }
-
             reportContainer.innerHTML = htmlContent;
-
+            
             const tbodyDeleted = document.getElementById('deletedTableBody');
             const deletedList = globalData ? (globalData.deletedExpenses || []) : [];
-            
             if (deletedList.length === 0) {
                 tbodyDeleted.innerHTML = `<tr><td colspan="3" style="text-align:center; opacity:0.6;">Chưa có dữ liệu bị xóa</td></tr>`;
             } else {
@@ -834,10 +760,8 @@
                     </tr>`;
                 }).reverse().join('');
             }
-
             document.getElementById('biWeeklyReportModal').classList.remove('hidden');
         }
-
         window.closeBiWeeklyReportModal = function() {
             triggerVibration();
             document.getElementById('biWeeklyReportModal').classList.add('hidden');
