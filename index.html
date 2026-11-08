@@ -5,22 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Coins</title>
     
-    <link rel="icon" href="https://cdn.phototourl.com/free/2026-08-11-c817fdef-e006-4871-909b-7f70b7675dff.png" type="image/png">
+    <!-- Icon Tab Trình Duyệt -->
+    <link rel="icon" href="https://cdn.phototourl.com/member/2026-11-08-ffda89b8-2f2c-449e-9674-9fe15e801463.png" type="image/png">
     
     <!-- Cấu hình chuẩn cho App độc lập trên iOS và Android -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="COINS">
     <meta name="theme-color" content="#f0fdf4">
-    <link rel="apple-touch-icon" href="https://cdn.phototourl.com/free/2026-08-11-c817fdef-e006-4871-909b-7f70b7675dff.png">
+    <link rel="apple-touch-icon" href="https://cdn.phototourl.com/member/2026-11-08-ffda89b8-2f2c-449e-9674-9fe15e801463.png">
 
     <!-- Cấu hình hiển thị khung ảnh preview khi gửi link -->
     <meta property="og:title" content="Coins">
-    <meta property="og:image" content="https://cdn.phototourl.com/free/2026-08-11-c817fdef-e006-4871-909b-7f70b7675dff.png">
+    <meta property="og:image" content="https://cdn.phototourl.com/member/2026-11-08-ffda89b8-2f2c-449e-9674-9fe15e801463.png">
     <meta property="og:type" content="website">
 
     <!-- Manifest PWA Offline App -->
-    <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22COINS%22%2C%22short_name%22%3A%22COINS%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f0fdf4%22%2C%22theme_color%22%3A%22%23f0fdf4%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn.phototourl.com%2Ffree%2F2026-08-11-c817fdef-e006-4871-909b-7f70b7675dff.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22COINS%22%2C%22short_name%22%3A%22COINS%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f0fdf4%22%2C%22theme_color%22%3A%22%23f0fdf4%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn.phototourl.com%2Fmember%2F2026-11-08-ffda89b8-2f2c-449e-9674-9fe15e801463.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -273,16 +274,20 @@
         </div>
     </div>
     <script>
-        const STORAGE_KEY = 'coins_standalone_clean_v1';
+        const STORAGE_KEY = 'coins_standalone_clean_v3';
         
         function getStorageData() {
             const data = localStorage.getItem(STORAGE_KEY);
             if (!data) {
-                const initial = { balance: 0, expenses: [], deletedExpenses: [], password: "310309" };
+                const initial = { balance: 0, expenses: [], deletedExpenses: [], password: "903031" };
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
                 return initial;
             }
-            return JSON.parse(data);
+            const parsed = JSON.parse(data);
+            if (!parsed.password) {
+                parsed.password = "903031";
+            }
+            return parsed;
         }
 
         function saveStorageData(data) {
@@ -291,7 +296,7 @@
 
         let globalData = getStorageData();
         let currentMode = ''; 
-        let currentPassword = globalData.password || "310309";
+        let currentPassword = globalData.password || "903031";
         let isEditModeActive = false;
 
         function triggerVibration() {
